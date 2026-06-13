@@ -42,7 +42,14 @@ tests/
 
 Each file has one responsibility. `tools.py` holds **pure logic** (takes a context, no SDK types) so it is unit-testable; `agent.py` wraps that logic as SDK tools and owns the LLM call. This keeps the non-deterministic LLM seam isolated to `agent.py` and `run_live`.
 
-Each task is TDD: write the failing test, run it to confirm it fails, implement the minimal code, run it to confirm it passes, commit. The run/commit rhythm is identical across tasks — run `pytest <path> -v`, then `git add <files> && git commit -m "<msg>"`.
+Each task is TDD: write the failing test, run it to confirm it fails, implement the minimal code, run it to confirm it passes, then pass the **merge gate** and commit. The rhythm is identical across tasks — run `pytest <path> -v`, then `git add <files> && git commit -m "<msg>"`.
+
+**Merge gate (enforced on every task before the change is merged/committed):** the final step of each task is a gate, not just a commit. The implementing subagent MUST:
+1. Confirm every behavior in that task's **Unit-test plan** (listed in the gate step) is covered by a passing test.
+2. Run the **whole suite** — `pytest -v` — not just the task's file, and confirm **0 failures** and **0 errors** (skips are allowed only for tests explicitly marked `skipif` for a missing `ANTHROPIC_API_KEY`).
+3. Paste/observe the actual pytest summary line (e.g. `N passed, M skipped`) as evidence — do not assert "tests pass" without the output.
+
+Only when the gate is green does the subagent commit. A red or unrun gate means the task is not done and must not be merged.
 
 ---
 
@@ -187,7 +194,13 @@ def test_settings_paths_resolve(vault):
 Run: `pip install -e ".[dev]" && pytest tests/test_db.py -v`
 Expected: PASS (1 test).
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 8: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `Settings` resolves `db_path`, `wiki_dir`, `inbox_dir`, `schema_path`, `index_path`, `log_path` under the vault dir.
+- `Settings.model` defaults to `claude-opus-4-8`.
+
+Gate: run `pytest -v` (whole suite). Expected summary: `1 passed`. Commit only if green.
 
 ```bash
 git add pyproject.toml pkb/ tests/
@@ -313,7 +326,14 @@ def init_db(conn: sqlite3.Connection) -> None:
 Run: `pytest tests/test_db.py -v`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `init_db` creates the `items`, `events`, `metrics`, `event_kinds` tables.
+- `init_db` is idempotent (re-running does not raise or duplicate data).
+- `connect` returns dict-like rows (`row["col"]` access works).
+
+Gate: run `pytest -v` (whole suite). Expected: all prior tests still pass + 4 new tests pass; `0 failed`. Commit only if green.
 
 ```bash
 git add pkb/db.py tests/test_db.py
@@ -428,7 +448,14 @@ def known_kinds(conn: sqlite3.Connection) -> list[str]:
 Run: `pytest tests/test_registry.py -v`
 Expected: PASS (3 tests).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `register_field` + `describe` round-trip a kind's fields with `type`/`unit`.
+- `register_field` is an upsert (re-registering a field updates, does not duplicate, and preserves prior `description` when not re-supplied).
+- `known_kinds` returns the distinct kinds.
+
+Gate: run `pytest -v` (whole suite). Expected: all prior tests pass + 3 new tests pass; `0 failed`. Commit only if green.
 
 ```bash
 git add pkb/registry.py tests/test_registry.py
@@ -694,7 +721,18 @@ def query_select(
 Run: `pytest tests/test_store.py -v`
 Expected: PASS (7 tests).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `create_item` + `get_item` round-trip (type, wiki_path).
+- `update_item` can morph an item's `type` (the open-schema invariant).
+- `insert_event` auto-registers each payload field in `event_kinds`.
+- `update_event_payload` merges changes (e.g. status → done).
+- `list_open_activities` returns only in-progress `activity_session` events.
+- `query_select` runs SELECTs and **rejects** non-SELECT statements (`ValueError`).
+- `insert_metric` writes a queryable metric row.
+
+Gate: run `pytest -v` (whole suite). Expected: all prior tests pass + 7 new tests pass; `0 failed`. Commit only if green.
 
 ```bash
 git add pkb/store.py tests/test_store.py
@@ -798,7 +836,14 @@ def commit_all(vault_dir: Path, message: str) -> str | None:
 Run: `pytest tests/test_gitops.py -v`
 Expected: PASS (4 tests).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `ensure_repo` initializes a git repo (`.git` exists) and is idempotent.
+- `commit_all` returns a sha when there are changes, then `None` on a clean tree.
+- The commit message appears in `git log`.
+
+Gate: run `pytest -v` (whole suite). Expected: all prior tests pass + 4 new tests pass; `0 failed`. Commit only if green.
 
 ```bash
 git add pkb/gitops.py tests/test_gitops.py
@@ -903,7 +948,14 @@ def upsert_index_entry(settings: Settings, rel_path: str, summary: str) -> None:
 Run: `pytest tests/test_wiki.py -v`
 Expected: PASS (3 tests).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `write_page` + `read_page` round-trip frontmatter and body.
+- `append_log` writes a `## [YYYY-MM-DD] kind | title` parseable prefix.
+- `upsert_index_entry` keeps exactly one line per page and updates its summary.
+
+Gate: run `pytest -v` (whole suite). Expected: all prior tests pass + 3 new tests pass; `0 failed`. Commit only if green.
 
 ```bash
 git add pkb/wiki.py tests/test_wiki.py
@@ -1092,7 +1144,17 @@ def make_context(conn: sqlite3.Connection, settings: Settings) -> AgentContext:
 Run: `pytest tests/test_tools.py -v`
 Expected: PASS (7 tests).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `record_event` inserts an event **and** produces a git commit (`record_event` in `git log`).
+- `update_event` changes a session's status.
+- `describe_schema` reports registered kinds + the `tables` list.
+- `query` runs a SELECT; `query` raises `ValueError` on non-SELECT.
+- `write_note` creates the page, the index entry, the log line, and commits.
+- `list_open_activities` returns in-progress sessions.
+
+Gate: run `pytest -v` (whole suite). Expected: all prior tests pass + 7 new tests pass; `0 failed`. Commit only if green.
 
 ```bash
 git add pkb/tools.py tests/test_tools.py
@@ -1177,7 +1239,13 @@ def seed_schema_md(settings: Settings) -> None:
 Run: `pytest tests/test_agent.py -v`
 Expected: PASS (1 test).
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `seed_schema_md` writes a `SCHEMA.md` containing the tool conventions (`record_event`).
+- `seed_schema_md` does **not** overwrite an existing `SCHEMA.md` (user edits survive).
+
+Gate: run `pytest -v` (whole suite). Expected: all prior tests pass + 1 new test passes; `0 failed`. Commit only if green.
 
 ```bash
 git add pkb/schema_seed.py tests/test_agent.py
@@ -1445,7 +1513,16 @@ def test_run_live_against_real_api_files_a_workout(vault):
 Run: `pytest tests/test_agent.py -v`
 Expected: PASS; the integration test reports SKIPPED.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `build_tools` returns callables; the `record_event` tool executes and inserts.
+- `build_system_prompt` includes the seeded SCHEMA conventions.
+- `run_live` returns `{reply, actions}` and the agent's tool calls actually mutate the store (verified via the monkeypatched `_run_tool_runner`).
+- `drain_inbox` processes each inbox file and removes it after.
+- The real-API integration test (`test_run_live_against_real_api_files_a_workout`) is present and marked `skipif` on missing `ANTHROPIC_API_KEY`.
+
+Gate: run `pytest -v` (whole suite). Expected: all prior tests pass + the new agent tests pass, with the integration test reported **SKIPPED** (not failed) when no key is set; `0 failed`, `0 errors`. Commit only if green.
 
 ```bash
 git add pkb/agent.py tests/test_agent.py
@@ -1620,7 +1697,14 @@ git -C ./vault log --oneline
 ```
 Expected: a JSON reply + actions; an open activity; commits in the vault repo.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 8: Merge gate, then commit**
+
+**Unit-test plan (all must pass before merge):**
+- `POST /capture` returns the agent's `{reply, actions}` (the `actions` list is the tap-to-correct payload).
+- `GET /activities/open` reflects an open activity created via capture.
+- `GET /items` returns `[]` on an empty store.
+
+Final-task gate: run the **whole suite** — `pytest -v` — and confirm the full plan is green end to end: all tests across all 10 tasks pass, with only the real-API integration test SKIPPED when `ANTHROPIC_API_KEY` is unset; `0 failed`, `0 errors`. Commit only if green.
 
 ```bash
 git add pkb/api.py pkb/main.py tests/test_api.py
