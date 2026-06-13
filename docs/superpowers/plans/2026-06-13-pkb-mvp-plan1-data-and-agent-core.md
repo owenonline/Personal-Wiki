@@ -1732,3 +1732,17 @@ Deferred to Plan 2 (web app) and later add-ons, per the design doc — correctly
 **Type/signature consistency:** `AgentContext` method names used in `agent.py`/`api.py` match Task 7 (`record_event`, `update_event`, `query`, `describe_schema`, `write_note`, `read_note`, `list_open_activities`). `store.insert_event`/`update_event_payload`/`query_select` signatures match their callers. `register_field(conn, kind, field, type, unit, description)` is called consistently. `Settings` properties (`db_path`, `wiki_dir`, `inbox_dir`, `schema_path`, `index_path`, `log_path`, `model`, `vault_dir`) match every use. `_run_tool_runner(ctx, user_text, client)` is the single monkeypatch seam used by all agent/API tests.
 
 **Open items intentionally left for implementation discretion:** exact `max_tokens` for the agent (8000 chosen as a safe default), and the precise wording of `SCHEMA.md` (will co-evolve with use, per the Karpathy pattern).
+
+---
+
+## Post-implementation amendments (applied during execution)
+
+Refinements made while executing this plan, each verified by the test suite and a live end-to-end run:
+
+- **`pkb/llm.py` `build_client()`** (new) — prefers the standard SDK when `ANTHROPIC_API_KEY` is set, else falls back to **Claude Platform on AWS** (`anthropic.AnthropicAWS`, short-term API key `ANTHROPIC_AWS_API_KEY` + `AWS_REGION` + `ANTHROPIC_AWS_WORKSPACE_ID`). This is the Anthropic-operated AWS endpoint (first-party parity), **not** Bedrock. `main.py` and the live integration test use it; the test's `skipif` accepts either credential. No `anthropic[aws]`/boto3 dependency was needed (the short-term API-key path doesn't require SigV4).
+- **Tool results return JSON strings.** `record_event` / `update_event` / `write_note` now `json.dumps(...)` their result — the Messages API rejects raw object (`dict`) `tool_result` content. The `build_tools` unit test parses the JSON. (Surfaced by the live run, not by the monkeypatched unit tests.)
+- **`db.connect(..., check_same_thread=False)`** — FastAPI dispatches requests on worker threads sharing the single connection.
+- **`wiki._safe_path`** — `write_page`/`read_page` reject `rel_path`s that escape the wiki dir (+ test), since `rel_path` is ultimately LLM/user-driven.
+- **Index entries are markdown links** (`- [path](path) — summary`); the idempotency test counts the link target (`](path)`), not the bare path.
+
+Final state: **40 unit tests pass, 1 integration test passes live** (against Claude Platform on AWS).
