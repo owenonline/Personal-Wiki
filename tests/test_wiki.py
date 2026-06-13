@@ -1,4 +1,13 @@
+import pytest
+
 from pkb.wiki import append_log, read_page, upsert_index_entry, write_page
+
+
+def test_write_page_rejects_path_escaping_wiki_dir(settings):
+    with pytest.raises(ValueError):
+        write_page(settings.wiki_dir, "../../etc/evil.md", {}, "x")
+    with pytest.raises(ValueError):
+        write_page(settings.wiki_dir, "/etc/evil.md", {}, "x")
 
 
 def test_write_and_read_page_roundtrip(settings):

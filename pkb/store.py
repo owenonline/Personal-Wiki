@@ -143,6 +143,9 @@ def query_select(
 ) -> list[dict]:
     """Run a read-only SELECT and return rows as dicts. Rejects anything else."""
     stripped = sql.strip().rstrip(";").lstrip("(")
+    # SELECT-only. Intentionally excludes a leading WITH: SQLite permits
+    # `WITH ... DELETE/UPDATE/INSERT`, so allowing CTEs here would let writes
+    # bypass this guard. Rewrite CTEs as subqueries if needed.
     if not stripped[:6].lower() == "select":
         raise ValueError("query_select only permits SELECT statements")
     if ";" in stripped:

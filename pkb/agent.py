@@ -61,7 +61,7 @@ def build_tools(ctx: AgentContext) -> list:
         return json.dumps(ctx.query(sql))
 
     @beta_tool
-    def write_note(rel_path: str, title: str, body: str, tags: list = []) -> dict:
+    def write_note(rel_path: str, title: str, body: str, tags: list | None = None) -> dict:
         """Create or replace a markdown wiki page (prose knowledge). `rel_path`
         is relative to the wiki dir, e.g. 'lists/reading.md'."""
         return ctx.write_note(rel_path, title, body, tags=tags)

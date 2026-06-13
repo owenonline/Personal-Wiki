@@ -8,10 +8,19 @@ import yaml
 from pkb.config import Settings
 
 
+def _safe_path(wiki_dir: Path, rel_path: str) -> Path:
+    """Resolve rel_path under wiki_dir, refusing paths that escape it."""
+    base = wiki_dir.resolve()
+    path = (base / rel_path).resolve()
+    if not path.is_relative_to(base):
+        raise ValueError(f"rel_path escapes wiki dir: {rel_path!r}")
+    return path
+
+
 def write_page(
     wiki_dir: Path, rel_path: str, frontmatter: dict, body: str
 ) -> Path:
-    path = wiki_dir / rel_path
+    path = _safe_path(wiki_dir, rel_path)
     path.parent.mkdir(parents=True, exist_ok=True)
     fm = yaml.safe_dump(frontmatter, sort_keys=True).strip()
     path.write_text(f"---\n{fm}\n---\n\n{body.strip()}\n")
@@ -19,7 +28,7 @@ def write_page(
 
 
 def read_page(wiki_dir: Path, rel_path: str) -> tuple[dict, str]:
-    text = (wiki_dir / rel_path).read_text()
+    text = _safe_path(wiki_dir, rel_path).read_text()
     if text.startswith("---\n"):
         _, fm_block, body = text.split("---\n", 2)
         return yaml.safe_load(fm_block) or {}, body.lstrip("\n")
