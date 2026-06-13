@@ -153,6 +153,9 @@ activemq-data/
 .venv
 env/
 venv/
+
+# Worktrees (used for parallel task execution)
+.worktrees/
 ENV/
 env.bak/
 venv.bak/
