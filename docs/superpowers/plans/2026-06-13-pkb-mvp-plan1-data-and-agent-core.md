@@ -887,7 +887,7 @@ def test_upsert_index_entry_is_idempotent(settings):
     upsert_index_entry(settings, "goals/squat.md", "Squat goal")
     upsert_index_entry(settings, "goals/squat.md", "Squat strength goal")
     text = settings.index_path.read_text()
-    assert text.count("goals/squat.md") == 1
+    assert text.count("](goals/squat.md)") == 1  # one entry; link target appears once
     assert "Squat strength goal" in text
 ```
 
