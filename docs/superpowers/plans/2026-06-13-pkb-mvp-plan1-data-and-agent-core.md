@@ -310,7 +310,7 @@ CREATE TABLE IF NOT EXISTS event_kinds (
 
 def connect(db_path: Path) -> sqlite3.Connection:
     db_path.parent.mkdir(parents=True, exist_ok=True)
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect(db_path, check_same_thread=False)  # FastAPI dispatches on worker threads
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
@@ -1285,7 +1285,7 @@ def test_build_tools_record_event_executes(vault):
     from pkb.agent import build_tools
 
     ctx = _ctx(vault)
-    tools = {t.__name__: t for t in build_tools(ctx)}
+    tools = {t.name: t for t in build_tools(ctx)}  # SDK BetaFunctionTool exposes .name
     out = tools["record_event"](kind="mood", payload={"valence": -1})
     assert out["event_id"].startswith("evt_")
     assert ctx.query("SELECT count(*) AS c FROM events")[0]["c"] == 1
