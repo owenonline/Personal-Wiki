@@ -31,11 +31,13 @@ def _ctx(vault):
 
 
 def test_build_tools_record_event_executes(vault):
+    import json
+
     from pkb.agent import build_tools
 
     ctx = _ctx(vault)
     tools = {t.name: t for t in build_tools(ctx)}
-    out = tools["record_event"](kind="mood", payload={"valence": -1})
+    out = json.loads(tools["record_event"](kind="mood", payload={"valence": -1}))
     assert out["event_id"].startswith("evt_")
     assert ctx.query("SELECT count(*) AS c FROM events")[0]["c"] == 1
 
@@ -86,18 +88,18 @@ def test_drain_inbox_processes_and_removes_files(vault, monkeypatch):
 
 
 @pytest.mark.skipif(
-    not os.environ.get("ANTHROPIC_API_KEY"), reason="needs ANTHROPIC_API_KEY"
+    not (os.environ.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_AWS_API_KEY")),
+    reason="needs ANTHROPIC_API_KEY or ANTHROPIC_AWS_API_KEY",
 )
 def test_run_live_against_real_api_files_a_workout(vault):
-    import anthropic
-
     from pkb.agent import run_live
+    from pkb.llm import build_client
 
     ctx = _ctx(vault)
     run_live(
         ctx,
         "Starting a workout. Bench 135x5, 135x5, 155x3. Felt sluggish.",
-        client=anthropic.Anthropic(),
+        client=build_client(),
     )
     sets = ctx.query(
         "SELECT count(*) AS c FROM events WHERE kind LIKE '%set%'"

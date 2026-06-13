@@ -40,19 +40,22 @@ def build_tools(ctx: AgentContext) -> list:
     @beta_tool
     def record_event(
         kind: str, payload: dict, item_id: str = "", location: str = ""
-    ) -> dict:
+    ) -> str:
         """File one atomic structured fact as a flat event row. `kind` is the
         event type (e.g. 'activity_session', 'workout_set', 'mood'); `payload`
-        is a flat dict of fields. Reuse existing kinds/fields where possible."""
-        return ctx.record_event(
-            kind, payload, item_id=item_id or None, location=location or None
+        is a flat dict of fields. Reuse existing kinds/fields where possible.
+        Returns the recorded event (incl. its event_id) as JSON."""
+        return json.dumps(
+            ctx.record_event(
+                kind, payload, item_id=item_id or None, location=location or None
+            )
         )
 
     @beta_tool
-    def update_event(event_id: str, changes: dict) -> dict:
+    def update_event(event_id: str, changes: dict) -> str:
         """Merge `changes` into an existing event's payload, e.g. set a
-        session's status to 'done'."""
-        return ctx.update_event(event_id, changes)
+        session's status to 'done'. Returns the result as JSON."""
+        return json.dumps(ctx.update_event(event_id, changes))
 
     @beta_tool
     def query(sql: str) -> str:
@@ -61,10 +64,10 @@ def build_tools(ctx: AgentContext) -> list:
         return json.dumps(ctx.query(sql))
 
     @beta_tool
-    def write_note(rel_path: str, title: str, body: str, tags: list | None = None) -> dict:
+    def write_note(rel_path: str, title: str, body: str, tags: list | None = None) -> str:
         """Create or replace a markdown wiki page (prose knowledge). `rel_path`
-        is relative to the wiki dir, e.g. 'lists/reading.md'."""
-        return ctx.write_note(rel_path, title, body, tags=tags)
+        is relative to the wiki dir, e.g. 'lists/reading.md'. Returns JSON."""
+        return json.dumps(ctx.write_note(rel_path, title, body, tags=tags))
 
     @beta_tool
     def read_note(rel_path: str) -> str:
