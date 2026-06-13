@@ -153,6 +153,12 @@ activemq-data/
 .venv
 env/
 venv/
+
+# Worktrees (used for parallel task execution)
+.worktrees/
+
+# uv lockfile (regenerated per worktree; deps pinned in pyproject)
+uv.lock
 ENV/
 env.bak/
 venv.bak/
