@@ -45,6 +45,23 @@ CREATE TABLE IF NOT EXISTS event_kinds (
     description TEXT,
     PRIMARY KEY (kind, field)
 );
+
+CREATE TABLE IF NOT EXISTS chats (
+    id         TEXT PRIMARY KEY,
+    title      TEXT,
+    ephemeral  INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS chat_messages (
+    id         TEXT PRIMARY KEY,
+    chat_id    TEXT NOT NULL,
+    role       TEXT NOT NULL,
+    content    TEXT NOT NULL DEFAULT '',
+    tool_steps TEXT NOT NULL DEFAULT '[]',
+    ts         TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_chat ON chat_messages(chat_id, ts);
 """
 
 
