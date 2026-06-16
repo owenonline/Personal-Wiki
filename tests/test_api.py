@@ -76,3 +76,34 @@ def test_wiki_page_rejects_escape(vault, monkeypatch):
     client, ctx = _client(vault, monkeypatch)
     resp = client.get("/api/wiki/page", params={"path": "../../etc/passwd"})
     assert resp.status_code == 400
+
+
+def test_chat_creates_session_and_persists_messages(vault, monkeypatch):
+    client, ctx = _client(vault, monkeypatch)
+    resp = client.post("/api/chat", json={"text": "starting a workout"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["reply"] == "Started your workout."
+    cid = body["chat_id"]
+    got = client.get(f"/api/chats/{cid}").json()
+    roles = [m["role"] for m in got["messages"]]
+    assert roles == ["user", "assistant"]
+    assert got["messages"][1]["tool_steps"][0]["tool"] == "record_event"
+
+
+def test_chat_continues_existing_session(vault, monkeypatch):
+    client, ctx = _client(vault, monkeypatch)
+    first = client.post("/api/chat", json={"text": "one"}).json()
+    cid = first["chat_id"]
+    client.post("/api/chat", json={"text": "two", "chat_id": cid})
+    got = client.get(f"/api/chats/{cid}").json()
+    assert len(got["messages"]) == 4  # 2 turns x (user+assistant)
+
+
+def test_persist_then_listed(vault, monkeypatch):
+    client, ctx = _client(vault, monkeypatch)
+    cid = client.post("/api/chat", json={"text": "keep me"}).json()["chat_id"]
+    assert client.get("/api/chats").json() == []  # ephemeral by default
+    client.post(f"/api/chats/{cid}/persist")
+    listed = client.get("/api/chats").json()
+    assert len(listed) == 1 and listed[0]["id"] == cid
