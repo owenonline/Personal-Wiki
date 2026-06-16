@@ -50,3 +50,29 @@ def test_items_endpoint_empty(vault, monkeypatch):
     resp = client.get("/items")
     assert resp.status_code == 200
     assert resp.json() == []
+
+
+def test_home_endpoint_shape(vault, monkeypatch):
+    client, ctx = _client(vault, monkeypatch)
+    client.post("/capture", json={"text": "starting a workout"})
+    resp = client.get("/api/home")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert set(body.keys()) == {"ongoing", "goals", "metrics", "approvals"}
+    assert len(body["ongoing"]) == 1
+
+
+def test_wiki_page_endpoint(vault, monkeypatch):
+    client, ctx = _client(vault, monkeypatch)
+    ctx.write_note("ideas/x.md", "X idea", "A neat idea.", tags=["idea"])
+    resp = client.get("/api/wiki/page", params={"path": "ideas/x.md"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["frontmatter"]["title"] == "X idea"
+    assert "neat idea" in body["body"]
+
+
+def test_wiki_page_rejects_escape(vault, monkeypatch):
+    client, ctx = _client(vault, monkeypatch)
+    resp = client.get("/api/wiki/page", params={"path": "../../etc/passwd"})
+    assert resp.status_code == 400
