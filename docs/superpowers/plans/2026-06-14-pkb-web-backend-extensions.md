@@ -331,7 +331,7 @@ def get_chat(conn: sqlite3.Connection, chat_id: str) -> dict | None:
     chat["messages"] = [
         {**dict(m), "tool_steps": json.loads(m["tool_steps"])}
         for m in conn.execute(
-            "SELECT * FROM chat_messages WHERE chat_id=? ORDER BY ts, id",
+            "SELECT * FROM chat_messages WHERE chat_id=? ORDER BY rowid",  # insertion order (ts is same-second; id is random)
             (chat_id,),
         )
     ]
