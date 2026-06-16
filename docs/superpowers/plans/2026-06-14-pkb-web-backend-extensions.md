@@ -176,14 +176,18 @@ import asyncio
 
 
 class EventBus:
-    """Minimal in-process pub/sub. Subscribers are asyncio.Queues; publish is
-    sync (callable from request handlers) and fans out via put_nowait. Single
-    uvicorn process / single event loop assumed."""
+    """Minimal in-process pub/sub for SSE. `publish` is sync so it can be called
+    from FastAPI's sync (`def`) handlers, which run in a worker thread, not the
+    loop. asyncio.Queue is not thread-safe, so publish schedules each put onto
+    the loop captured at subscribe time via call_soon_threadsafe. Single uvicorn
+    process / single event loop assumed."""
 
     def __init__(self) -> None:
         self._subscribers: set[asyncio.Queue] = set()
+        self._loop: asyncio.AbstractEventLoop | None = None
 
     async def subscribe(self) -> asyncio.Queue:
+        self._loop = asyncio.get_running_loop()
         q: asyncio.Queue = asyncio.Queue()
         self._subscribers.add(q)
         return q
@@ -192,8 +196,12 @@ class EventBus:
         self._subscribers.discard(q)
 
     def publish(self, event: dict) -> None:
+        loop = self._loop
         for q in list(self._subscribers):
-            q.put_nowait(event)
+            if loop is not None and loop.is_running():
+                loop.call_soon_threadsafe(q.put_nowait, event)
+            else:
+                q.put_nowait(event)
 ```
 
 - [ ] **Step 4: Run to verify it passes**

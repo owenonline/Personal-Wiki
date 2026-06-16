@@ -107,3 +107,52 @@ def test_persist_then_listed(vault, monkeypatch):
     client.post(f"/api/chats/{cid}/persist")
     listed = client.get("/api/chats").json()
     assert len(listed) == 1 and listed[0]["id"] == cid
+
+
+def test_capture_publishes_home_changed(vault, monkeypatch):
+    import asyncio
+
+    from fastapi.testclient import TestClient
+
+    from pkb.api import create_app
+    from pkb.eventbus import EventBus
+
+    client, ctx = _client(vault, monkeypatch)  # installs the monkeypatched runner
+    bus = EventBus()
+    app = create_app(ctx, client=object(), bus=bus)
+    c2 = TestClient(app)
+
+    async def run():
+        q = await bus.subscribe()
+        c2.post("/capture", json={"text": "go"})
+        return await asyncio.wait_for(q.get(), 1)
+
+    event = asyncio.run(run())
+    assert event["type"] == "home_changed"
+
+
+async def test_sse_stream_yields_published_events(vault):
+    import asyncio
+    import json
+
+    from pkb.api import sse_stream
+    from pkb.eventbus import EventBus
+
+    bus = EventBus()
+    gen = sse_stream(bus)
+    first = asyncio.create_task(gen.__anext__())
+    await asyncio.sleep(0.05)  # let the generator subscribe and block on get
+    bus.publish({"type": "home_changed"})
+    line = await asyncio.wait_for(first, 2)
+    assert json.loads(line.removeprefix("data: ").strip())["type"] == "home_changed"
+    await gen.aclose()  # GeneratorExit -> finally -> unsubscribe (no hang)
+    assert bus._subscribers == set()
+
+
+def test_events_route_registered(vault, monkeypatch):
+    from pkb.api import create_app
+    from pkb.eventbus import EventBus
+
+    client, ctx = _client(vault, monkeypatch)
+    app = create_app(ctx, client=object(), bus=EventBus())
+    assert "/api/events" in {r.path for r in app.routes}

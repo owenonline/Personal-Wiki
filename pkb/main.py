@@ -5,6 +5,7 @@ import uvicorn
 from pkb.api import create_app
 from pkb.config import get_settings
 from pkb.db import connect, init_db
+from pkb.eventbus import EventBus
 from pkb.gitops import ensure_repo
 from pkb.llm import build_client
 from pkb.schema_seed import seed_schema_md
@@ -20,7 +21,7 @@ def build_app():
     conn = connect(settings.db_path)
     init_db(conn)
     ctx = make_context(conn, settings)
-    return create_app(ctx, client=build_client())
+    return create_app(ctx, client=build_client(), bus=EventBus())
 
 
 def main() -> None:

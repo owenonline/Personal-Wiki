@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from pkb import agent
 from pkb import chat as chatstore
+from pkb.eventbus import EventBus
 from pkb.home import build_home
 from pkb.store import query_select
 from pkb.tools import AgentContext
@@ -22,12 +25,27 @@ class ChatRequest(BaseModel):
     context: dict | None = None
 
 
-def create_app(ctx: AgentContext, client: Any) -> FastAPI:
+async def sse_stream(bus: EventBus):
+    """Yield SSE `data:` frames for each event published to `bus`, until the
+    consumer disconnects (the generator is cancelled/closed)."""
+    q = await bus.subscribe()
+    try:
+        while True:
+            event = await q.get()
+            yield f"data: {json.dumps(event)}\n\n"
+    finally:
+        bus.unsubscribe(q)
+
+
+def create_app(ctx: AgentContext, client: Any, bus: EventBus | None = None) -> FastAPI:
     app = FastAPI(title="PKB")
+    bus = bus or EventBus()
 
     @app.post("/capture")
     def capture(req: CaptureRequest) -> dict:
-        return agent.run_live(ctx, req.text, client=client)
+        result = agent.run_live(ctx, req.text, client=client)
+        bus.publish({"type": "home_changed"})
+        return result
 
     @app.get("/activities/open")
     def open_activities() -> list[dict]:
@@ -65,6 +83,7 @@ def create_app(ctx: AgentContext, client: Any) -> FastAPI:
             ctx.conn, cid, "assistant", result["reply"],
             tool_steps=result.get("actions", []),
         )
+        bus.publish({"type": "home_changed", "chat_id": cid})
         return {"chat_id": cid, **result}
 
     @app.get("/api/chats")
@@ -82,5 +101,9 @@ def create_app(ctx: AgentContext, client: Any) -> FastAPI:
     def persist_chat(chat_id: str) -> dict:
         chatstore.mark_persistent(ctx.conn, chat_id)
         return {"chat_id": chat_id, "ephemeral": False}
+
+    @app.get("/api/events")
+    async def events() -> StreamingResponse:
+        return StreamingResponse(sse_stream(bus), media_type="text/event-stream")
 
     return app
