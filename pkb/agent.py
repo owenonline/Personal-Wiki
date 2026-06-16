@@ -91,15 +91,37 @@ def build_tools(ctx: AgentContext) -> list:
     ]
 
 
-def _run_tool_runner(ctx: AgentContext, user_text: str, client: Any) -> dict:
+def render_context_note(ctx: AgentContext, context: dict | None) -> str:
+    """Render an optional view-context hint into a system note. Currently
+    supports {'type': 'wiki_page', 'path': ...}."""
+    if not context:
+        return ""
+    if context.get("type") == "wiki_page":
+        try:
+            _fm, body = ctx.read_note(context["path"])
+        except FileNotFoundError:
+            return ""
+        return (
+            f"The user is currently viewing the wiki page '{context['path']}'. "
+            f"Its content:\n\n{body}\n\nAnswer with this page in mind."
+        )
+    return ""
+
+
+def _run_tool_runner(ctx: AgentContext, user_text: str, client: Any,
+                     context: dict | None = None) -> dict:
     """Run the Anthropic beta tool runner. Returns {reply, actions}. Isolated so
     tests can monkeypatch it without an API key."""
     tools = build_tools(ctx)
+    system = build_system_prompt(ctx)
+    note = render_context_note(ctx, context)
+    if note:
+        system = system + "\n\n" + note
     runner = client.beta.messages.tool_runner(
         model=ctx.settings.model,
         max_tokens=8000,
         thinking={"type": "adaptive"},
-        system=build_system_prompt(ctx),
+        system=system,
         tools=tools,
         messages=[{"role": "user", "content": user_text}],
     )
@@ -114,9 +136,10 @@ def _run_tool_runner(ctx: AgentContext, user_text: str, client: Any) -> dict:
     return {"reply": "".join(reply_parts).strip(), "actions": actions}
 
 
-def run_live(ctx: AgentContext, user_text: str, client: Any) -> dict:
+def run_live(ctx: AgentContext, user_text: str, client: Any,
+             context: dict | None = None) -> dict:
     """LIVE-mode entry point: process one piece of user text synchronously."""
-    return _run_tool_runner(ctx, user_text, client)
+    return _run_tool_runner(ctx, user_text, client, context=context)
 
 
 def drain_inbox(ctx: AgentContext, client: Any) -> list[dict]:

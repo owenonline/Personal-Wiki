@@ -105,3 +105,36 @@ def test_run_live_against_real_api_files_a_workout(vault):
         "SELECT count(*) AS c FROM events WHERE kind LIKE '%set%'"
     )
     assert sets[0]["c"] >= 1
+
+
+def test_run_live_passes_context_to_runner(vault, monkeypatch):
+    import pkb.agent as agent
+
+    ctx = _ctx(vault)
+    seen = {}
+
+    def fake_runner(ctx_, user_text, client, context=None):
+        seen["context"] = context
+        return {"reply": "ok", "actions": []}
+
+    monkeypatch.setattr(agent, "_run_tool_runner", fake_runner)
+    agent.run_live(ctx, "why is this?", client=object(),
+                   context={"type": "wiki_page", "path": "goals/squat.md"})
+    assert seen["context"] == {"type": "wiki_page", "path": "goals/squat.md"}
+
+
+def test_render_context_note_reads_wiki_page(vault):
+    from pkb.agent import render_context_note
+
+    ctx = _ctx(vault)
+    ctx.write_note("goals/squat.md", "Squat", "Build to a 2x bodyweight squat.")
+    note = render_context_note(ctx, {"type": "wiki_page", "path": "goals/squat.md"})
+    assert "2x bodyweight squat" in note
+    assert "goals/squat.md" in note
+
+
+def test_render_context_note_none_is_empty(vault):
+    from pkb.agent import render_context_note
+
+    ctx = _ctx(vault)
+    assert render_context_note(ctx, None) == ""
