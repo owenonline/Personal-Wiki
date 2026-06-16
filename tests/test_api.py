@@ -20,7 +20,7 @@ def _client(vault, monkeypatch):
 
     import pkb.agent as agent
 
-    def fake_runner(ctx_, user_text, client):
+    def fake_runner(ctx_, user_text, client, context=None):
         ctx_.record_event("activity_session", {"name": "workout", "status": "in_progress"})
         return {"reply": "Started your workout.", "actions": [{"tool": "record_event", "input": {}}]}
 

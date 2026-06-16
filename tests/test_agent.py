@@ -55,7 +55,7 @@ def test_run_live_collects_actions(vault, monkeypatch):
 
     ctx = _ctx(vault)
 
-    def fake_runner(ctx_, user_text, client):
+    def fake_runner(ctx_, user_text, client, context=None):
         # Simulate the model deciding to file a mood event, then replying.
         ctx_.record_event("mood", {"valence": -1, "note": "tired"})
         return {
@@ -76,7 +76,7 @@ def test_drain_inbox_processes_and_removes_files(vault, monkeypatch):
     ctx = _ctx(vault)
     (ctx.settings.inbox_dir / "001.txt").write_text("remember to read Dune")
 
-    def fake_runner(ctx_, user_text, client):
+    def fake_runner(ctx_, user_text, client, context=None):
         ctx_.write_note("lists/reading.md", "Reading list", user_text)
         return {"reply": "filed", "actions": []}
 
