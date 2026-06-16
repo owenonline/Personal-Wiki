@@ -26,7 +26,7 @@ Tile types:
 - **Ongoing activity** (from Plan 1 `list_open_activities`) — e.g. "⏱ Workout · 3 sets logged".
 - **Daily goal** — a goal `item`; shows today's progress/target and a done state when met.
 - **Requested metric** — a health/quantified metric the user pinned (e.g. Sleep, Steps).
-- **Pending approval** — a wiki correction the agent proposes but wants permission for (the propose-confirm trust tier); tap to review/approve/reject.
+- **Pending approval** — a *high-stakes* change the agent proposes but won't make without permission (**Tier 3** only: delete/merge a page, morph a goal's type, broad multi-page edits); tap to review → approve/reject. Routine inserts and notes never appear here — they auto-file.
 
 **Tap a tile → modal** with a free-text input: type to log into that subject (add sets, update a goal). The agent files it and the **tile reacts live** (e.g. logging 25 min against a 20-min goal flips the tile to ✓ done). The modal is the per-subject analog of the global capture box.
 
@@ -47,8 +47,8 @@ The SPA needs a few endpoints beyond Plan 1's `/capture`, `/activities/open`, `/
 - **Tiles feed** — `GET /api/home` returning the ordered tile set (ongoing activities, goal items, pinned metrics, pending approvals) so the home renders in one call.
 - **Wiki read** — `GET /api/wiki/index` (catalog) and `GET /api/wiki/page?path=…` (frontmatter + rendered markdown). Reuses `wiki.read_page`; path-containment already enforced.
 - **Context-aware chat** — extend the capture/chat call to accept an optional `context` ({type, ref}); the agent incorporates it (reads the page or scopes the query) before responding. Chat sessions: persist messages so persistent chats + the sidebar work (`/api/chats`, `/api/chats/{id}`), including the tool-use events for inline display.
-- **Approvals** — a minimal pending-changes mechanism: the agent can enqueue a proposed wiki change instead of auto-filing it; `GET /api/approvals`, `POST /api/approvals/{id}` (approve/reject) → agent applies or discards. Realizes the propose-confirm trust tier the master spec describes.
-- **Live updates** — polling first (simple), with an SSE endpoint as an optional upgrade so tiles/chat update without manual refresh.
+- **Approvals (high-stakes only)** — approvals are the **third trust tier** from the master spec, **not a blanket gate**. Tier 1 *structured inserts* (sets/activities/metrics) and Tier 2 *knowledge filing* (notes/ingests) keep auto-filing — corrected after the fact via tap-to-correct cards and receipts. Only **destructive / ambiguous / cross-cutting** changes (deleting or merging pages, morphing a goal's type, broad multi-page edits) are **enqueued for approval** instead of applied: `GET /api/approvals`, `POST /api/approvals/{id}` (approve/reject) → the agent applies or discards. These are exactly what surface as the home **pending-approval tiles**. The agent classifies which tier an action falls in (a Tier-3 detector; default to auto-file for anything not clearly destructive/cross-cutting).
+- **Live updates (SSE)** — an SSE stream pushes events to the SPA (new/updated tile, a chat tool-use step, a new approval, an activity change) so the dashboard and chat update live without manual refresh. This is the primary mechanism (not polling).
 - **Static hosting** — FastAPI serves the built SPA.
 
 ## Scope — real now vs. enriched by later add-ons
@@ -74,7 +74,8 @@ This sub-project is large; it will likely become a short sequence of plans rathe
 writing-plans will finalize the split and the per-task detail.
 
 ## Open items for planning
-- Live updates: start with polling vs. invest in SSE immediately.
+- SSE specifics: event schema/topics, reconnect/backfill, and how the agent service emits events into the stream.
+- Tier-3 classification: how the agent decides an action needs approval (heuristic + tool design) and how a proposed change is represented until approved.
 - Chat persistence storage (reuse SQLite `events`/a `chats` table vs. markdown) and how tool-use steps are recorded for replay.
 - Exact `context` hint schema and how the agent consumes it (system message vs. tool).
 - Approvals storage (new table vs. `events` with a `proposed_change` kind) and how the agent decides to propose vs. auto-file.
