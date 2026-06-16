@@ -157,6 +157,9 @@ venv/
 # Worktrees (used for parallel task execution)
 .worktrees/
 
+# Brainstorming visual-companion mockups
+.superpowers/
+
 # uv lockfile (regenerated per worktree; deps pinned in pyproject)
 uv.lock
 ENV/
