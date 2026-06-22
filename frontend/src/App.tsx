@@ -15,31 +15,28 @@ export default function App() {
   const [modalTile, setModalTile] = useState<TileData | null>(null);
 
   return (
-    <main style={{ background: "var(--bg)", color: "var(--text)", minHeight: "100vh", paddingBottom: 64 }}>
-      <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 12 }}>
-        <button type="button" aria-label="Open chats" onClick={() => setSidebarOpen(true)}>☰</button>
-        <span>PKB</span>
+    <main className="app">
+      <header className="app-header">
+        <button
+          className="icon-btn"
+          type="button"
+          aria-label="Open chats"
+          onClick={() => setSidebarOpen(true)}
+        >
+          ☰
+        </button>
+        <span className="wordmark">PKB</span>
         <BaseColorPicker />
       </header>
 
       {home && <HomeView home={home} onTileClick={setModalTile} />}
 
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, padding: 8, background: "var(--bg)" }}>
-        <button
-          type="button"
-          onClick={() => setChatOpen(true)}
-          style={{
-            width: "100%",
-            textAlign: "left",
-            padding: 12,
-            borderRadius: 20,
-            background: "var(--surface)",
-            color: "var(--muted)",
-            border: "1px solid var(--surface2)",
-          }}
-        >
-          Type anything…
-        </button>
+      <div className="capture-bar">
+        <div className="capture-bar__inner">
+          <button className="capture-btn" type="button" onClick={() => setChatOpen(true)}>
+            Type anything…<span className="caret">⌁</span>
+          </button>
+        </div>
       </div>
 
       {modalTile && (

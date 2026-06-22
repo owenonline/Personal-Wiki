@@ -230,3 +230,6 @@ __marimo__/
 frontend/node_modules/
 frontend/dist/
 frontend/*.tsbuildinfo
+
+# Playwright MCP scratch output
+.playwright-mcp/

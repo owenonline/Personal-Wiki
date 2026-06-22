@@ -9,23 +9,23 @@ export function Tile({
   variant?: "ongoing" | "goal" | "default";
   onClick?: () => void;
 }) {
+  const status = typeof tile.status === "string" ? tile.status : undefined;
+  const meta = variant === "ongoing" ? "in progress" : status;
+  const cls =
+    "tile" +
+    (variant === "ongoing" ? " tile--ongoing" : "") +
+    (status === "done" ? " tile--done" : "");
+
   return (
-    <button
-      type="button"
-      data-variant={variant}
-      onClick={onClick}
-      style={{
-        textAlign: "left",
-        background: "var(--surface)",
-        color: "var(--text)",
-        border: "1px solid var(--surface2)",
-        borderRadius: 12,
-        padding: 12,
-        width: "100%",
-        cursor: "pointer",
-      }}
-    >
-      <div style={{ fontWeight: 600 }}>{tile.title}</div>
+    <button type="button" className={cls} onClick={onClick}>
+      <span className="tile__title">{tile.title}</span>
+      {meta && <span className="tile__meta">{meta}</span>}
+      {variant === "ongoing" && (
+        <>
+          <span className="spacer" />
+          <span className="live-dot" />
+        </>
+      )}
     </button>
   );
 }

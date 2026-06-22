@@ -12,33 +12,28 @@ export function ChatSidebar({
   const [chats, setChats] = useState<{ id: string; title: string | null }[]>([]);
 
   useEffect(() => {
-    getChats().then(setChats).catch(() => setChats([]));
+    getChats()
+      .then(setChats)
+      .catch(() => setChats([]));
   }, []);
 
   return (
-    <aside
-      aria-label="chats"
-      style={{
-        position: "fixed",
-        top: 0,
-        bottom: 0,
-        left: 0,
-        width: 240,
-        background: "var(--surface)",
-        color: "var(--text)",
-        padding: 12,
-      }}
-    >
-      <button type="button" aria-label="Close chats" onClick={onClose}>×</button>
-      <ul style={{ listStyle: "none", padding: 0 }}>
+    <>
+      <div className="scrim" onClick={onClose} />
+      <aside className="drawer" aria-label="chats">
+        <div className="drawer__top">
+          <span className="drawer__title">Chats</span>
+          <button className="icon-btn" type="button" aria-label="Close chats" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        {chats.length === 0 && <div className="drawer__empty">No saved chats yet.</div>}
         {chats.map((c) => (
-          <li key={c.id}>
-            <button type="button" onClick={() => onOpen(c.id)} style={{ width: "100%", textAlign: "left" }}>
-              {c.title ?? "(untitled)"}
-            </button>
-          </li>
+          <button key={c.id} className="chat-row" type="button" onClick={() => onOpen(c.id)}>
+            {c.title ?? "(untitled)"}
+          </button>
         ))}
-      </ul>
-    </aside>
+      </aside>
+    </>
   );
 }

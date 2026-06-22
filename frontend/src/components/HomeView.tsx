@@ -9,22 +9,23 @@ export function HomeView({
   onTileClick: (tile: TileData) => void;
 }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12 }}>
+    <>
       {home.ongoing.length > 0 && (
-        <section aria-label="ongoing" style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-          {home.ongoing.map((t) => (
-            <Tile key={t.id} tile={t} variant="ongoing" onClick={() => onTileClick(t)} />
-          ))}
-        </section>
+        <>
+          <div className="section-label">ongoing</div>
+          <section className="tiles" aria-label="ongoing">
+            {home.ongoing.map((t) => (
+              <Tile key={t.id} tile={t} variant="ongoing" onClick={() => onTileClick(t)} />
+            ))}
+          </section>
+        </>
       )}
-      <section
-        aria-label="goals"
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}
-      >
+      <div className="section-label">today</div>
+      <section className="tiles" aria-label="goals">
         {home.goals.map((t) => (
           <Tile key={t.id} tile={t} variant="goal" onClick={() => onTileClick(t)} />
         ))}
       </section>
-    </div>
+    </>
   );
 }

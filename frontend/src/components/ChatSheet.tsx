@@ -23,46 +23,50 @@ export function ChatSheet({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-label="chat"
-      style={{
-        position: "fixed",
-        left: 0,
-        right: 0,
-        bottom: 0,
-        height: "66%",
-        background: "var(--surface)",
-        color: "var(--text)",
-        borderRadius: "16px 16px 0 0",
-        display: "flex",
-        flexDirection: "column",
-        padding: 12,
-      }}
-    >
-      <div style={{ display: "flex", justifyContent: "space-between" }}>
-        <button type="button" disabled={!chatId} onClick={() => chatId && persistChat(chatId)}>
-          Keep
-        </button>
-        <button type="button" aria-label="Close chat" onClick={onClose}>×</button>
-      </div>
-      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{ alignSelf: m.role === "user" ? "flex-end" : "flex-start" }}>
-            <div>{m.content}</div>
-            {m.role === "assistant" && <ToolSteps steps={m.tool_steps} />}
+    <>
+      <div className="scrim" onClick={onClose} />
+      <div className="sheet" role="dialog" aria-label="chat">
+        <div className="sheet__handle" />
+        <div className="chat">
+          <div className="chat__head">
+            <button
+              className="btn-ghost"
+              type="button"
+              disabled={!chatId}
+              onClick={() => chatId && persistChat(chatId)}
+            >
+              Keep
+            </button>
+            <span className="chat__ephemeral">ephemeral</span>
+            <button className="icon-btn" type="button" aria-label="Close chat" onClick={onClose}>
+              ×
+            </button>
           </div>
-        ))}
+          <div className="chat__msgs">
+            {messages.map((m, i) =>
+              m.role === "user" ? (
+                <div key={i} className="bubble bubble--me">
+                  {m.content}
+                </div>
+              ) : (
+                <div key={i} className="row-ai">
+                  <div className="bubble bubble--ai">{m.content}</div>
+                  <ToolSteps steps={m.tool_steps} />
+                </div>
+              ),
+            )}
+          </div>
+          <form className="chat__form" onSubmit={onSubmit}>
+            <input
+              className="field"
+              aria-label="chat input"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder="Type anything…"
+            />
+          </form>
+        </div>
       </div>
-      <form onSubmit={onSubmit}>
-        <input
-          aria-label="chat input"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Type anything…"
-          style={{ width: "100%", padding: 8 }}
-        />
-      </form>
-    </div>
+    </>
   );
 }

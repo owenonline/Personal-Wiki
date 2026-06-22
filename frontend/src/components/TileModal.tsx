@@ -19,31 +19,33 @@ export function TileModal({
   }
 
   return (
-    <div
-      role="dialog"
-      aria-label={tile.title}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.45)",
-        display: "flex",
-        alignItems: "flex-end",
-      }}
-    >
-      <div style={{ background: "var(--surface)", color: "var(--text)", width: "100%", padding: 16, borderRadius: "16px 16px 0 0" }}>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <strong>{tile.title}</strong>
-          <button type="button" aria-label="Close" onClick={onClose}>×</button>
+    <>
+      <div className="scrim" onClick={onClose} />
+      <div className="sheet" role="dialog" aria-label={tile.title}>
+        <div className="sheet__handle" />
+        <div className="modal__head">
+          <span className="modal__title">{tile.title}</span>
+          <button className="icon-btn" type="button" aria-label="Close" onClick={onClose}>
+            ×
+          </button>
         </div>
+        <div className="modal__hint">Log into this tile — type anything.</div>
         <input
+          className="field"
           aria-label="log entry"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="log…"
-          style={{ width: "100%", marginTop: 8, padding: 8 }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") log();
+          }}
+          placeholder="e.g. did 25 min, felt great"
         />
-        <button type="button" onClick={log} style={{ marginTop: 8 }}>Log</button>
+        <div className="modal__actions">
+          <button className="btn-primary" type="button" onClick={log}>
+            Log
+          </button>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

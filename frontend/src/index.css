@@ -1,0 +1,236 @@
+/* ============================================================================
+   PKB — "Dusk journal" theme. Atmospheric dark, fully driven by the OKLCH
+   theme variables (--bg/--surface/--surface2/--text/--muted/--accent/--secondary)
+   set by the theme engine, so the settings color wheel re-themes everything.
+   ========================================================================== */
+
+:root {
+  --r: 16px;
+  --r-sm: 11px;
+  --gap: 10px;
+  --maxw: 480px;
+  color-scheme: dark;
+  /* fallbacks so the app is legible before the theme engine paints vars */
+  --bg: #0f1a14;
+  --surface: #18241d;
+  --surface2: #25332a;
+  --text: #e7efe9;
+  --muted: #93a89b;
+  --accent: #ff8b6a;
+  --secondary: #bcd9b2;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  font-family: "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* atmosphere: themed radial glows + faint grain, fixed behind content */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -2;
+  background:
+    radial-gradient(65% 45% at 50% -8%, color-mix(in oklab, var(--accent) 16%, transparent), transparent 70%),
+    radial-gradient(70% 55% at 112% 8%, color-mix(in oklab, var(--secondary) 13%, transparent), transparent 70%),
+    radial-gradient(85% 70% at -12% 105%, color-mix(in oklab, var(--surface2) 70%, transparent), transparent 72%),
+    var(--bg);
+}
+body::after {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  opacity: 0.045; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---- layout shell ---- */
+.app { max-width: var(--maxw); margin: 0 auto; min-height: 100%; padding: 0 14px 104px; }
+
+.app-header {
+  position: sticky; top: 0; z-index: 5;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 2px 10px;
+  background: linear-gradient(180deg, var(--bg) 55%, transparent);
+  backdrop-filter: blur(6px);
+}
+.wordmark {
+  font-family: "Fraunces", Georgia, serif; font-weight: 540; font-size: 21px;
+  letter-spacing: 0.01em;
+}
+.icon-btn {
+  background: transparent; border: 0; color: var(--muted);
+  font-size: 19px; line-height: 1; cursor: pointer; padding: 7px;
+  border-radius: 9px; transition: color .15s, background .15s;
+}
+.icon-btn:hover { color: var(--text); background: color-mix(in oklab, var(--surface) 60%, transparent); }
+
+.section-label {
+  font-family: "Fraunces", Georgia, serif; font-style: italic;
+  font-size: 13px; color: var(--muted); margin: 18px 4px 9px;
+}
+
+/* ---- tiles ---- */
+.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+
+.tile {
+  appearance: none; text-align: left; cursor: pointer; color: var(--text);
+  background: color-mix(in oklab, var(--surface) 90%, var(--bg));
+  border: 1px solid color-mix(in oklab, var(--surface2) 75%, transparent);
+  border-radius: var(--r); padding: 14px;
+  display: flex; flex-direction: column; gap: 6px; min-height: 78px;
+  box-shadow:
+    0 1px 0 color-mix(in oklab, var(--text) 7%, transparent) inset,
+    0 10px 24px -16px rgba(0,0,0,0.7);
+  transition: transform .16s ease, border-color .16s ease;
+  animation: rise .5s both;
+}
+.tiles .tile:nth-child(2) { animation-delay: .05s; }
+.tiles .tile:nth-child(3) { animation-delay: .10s; }
+.tiles .tile:nth-child(4) { animation-delay: .15s; }
+.tiles .tile:nth-child(5) { animation-delay: .20s; }
+.tiles .tile:nth-child(6) { animation-delay: .25s; }
+.tiles .tile:nth-child(7) { animation-delay: .30s; }
+.tiles .tile:nth-child(8) { animation-delay: .35s; }
+.tile:hover { transform: translateY(-2px); border-color: color-mix(in oklab, var(--accent) 38%, var(--surface2)); }
+.tile:active { transform: translateY(0); }
+.tile__title { font-weight: 600; font-size: 14px; line-height: 1.25; }
+.tile__meta { font-size: 12px; color: var(--muted); }
+
+.tile--ongoing {
+  grid-column: 1 / -1; min-height: 60px; flex-direction: row; align-items: center; gap: 12px;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--accent) 11%, var(--surface)), var(--surface));
+  border-color: color-mix(in oklab, var(--accent) 32%, var(--surface2));
+}
+.tile--ongoing .tile__title { font-size: 15px; }
+.tile--done { color: var(--secondary); border-color: color-mix(in oklab, var(--secondary) 28%, var(--surface2)); }
+
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex: none;
+  background: var(--accent); box-shadow: 0 0 12px var(--accent);
+  animation: pulse 1.9s ease-in-out infinite;
+}
+.spacer { flex: 1; }
+
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideup { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes slidein { from { transform: translateX(-100%); } to { transform: none; } }
+
+/* ---- capture bar ---- */
+.capture-bar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  padding: 14px 14px calc(14px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent, var(--bg) 42%);
+}
+.capture-bar__inner { max-width: var(--maxw); margin: 0 auto; }
+.capture-btn {
+  width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+  padding: 15px 18px; border-radius: 999px; cursor: pointer; font: inherit; font-size: 15px;
+  color: var(--muted);
+  background: color-mix(in oklab, var(--surface) 86%, var(--bg));
+  border: 1px solid var(--surface2);
+  box-shadow: 0 14px 36px -18px rgba(0,0,0,0.85);
+  transition: border-color .15s;
+}
+.capture-btn:hover { border-color: color-mix(in oklab, var(--accent) 40%, var(--surface2)); }
+.capture-btn .caret { margin-left: auto; color: var(--accent); font-size: 16px; }
+
+/* ---- bottom sheet (chat + modal) ---- */
+.scrim {
+  position: fixed; inset: 0; z-index: 30;
+  background: color-mix(in oklab, var(--bg) 50%, rgba(0,0,0,0.6));
+  backdrop-filter: blur(3px); animation: fade .2s both;
+}
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 31;
+  max-width: var(--maxw); margin: 0 auto;
+  background: color-mix(in oklab, var(--surface) 96%, var(--bg)); color: var(--text);
+  border-top: 1px solid var(--surface2); border-radius: 24px 24px 0 0;
+  box-shadow: 0 -24px 60px -24px rgba(0,0,0,0.85);
+  padding: 8px 16px calc(16px + env(safe-area-inset-bottom));
+  animation: slideup .3s cubic-bezier(.2,.85,.25,1) both;
+}
+.sheet__handle { width: 40px; height: 4px; border-radius: 999px; background: var(--surface2); margin: 6px auto 6px; }
+
+/* ---- chat ---- */
+.chat { display: flex; flex-direction: column; height: 64vh; }
+.chat__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.chat__ephemeral { font-size: 11px; color: var(--muted); font-style: italic; }
+.chat__msgs { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; padding: 8px 2px; }
+.bubble { max-width: 84%; padding: 10px 13px; border-radius: 15px; font-size: 14px; line-height: 1.38; }
+.bubble--me { align-self: flex-end; background: var(--accent); color: color-mix(in oklab, var(--bg) 80%, black); border-bottom-right-radius: 5px; }
+.bubble--ai { align-self: flex-start; background: color-mix(in oklab, var(--surface2) 55%, var(--surface)); border-bottom-left-radius: 5px; }
+.row-ai { align-self: flex-start; display: flex; flex-direction: column; max-width: 88%; }
+
+.tool-steps { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.chip {
+  font-size: 11px; color: var(--muted);
+  background: color-mix(in oklab, var(--surface2) 35%, transparent);
+  border: 1px solid color-mix(in oklab, var(--surface2) 85%, transparent);
+  border-radius: 7px; padding: 2px 7px; white-space: nowrap;
+}
+
+.field {
+  width: 100%; padding: 13px 15px; border-radius: 15px; font: inherit; font-size: 15px;
+  background: color-mix(in oklab, var(--bg) 55%, var(--surface)); color: var(--text);
+  border: 1px solid var(--surface2); outline: none; transition: border-color .15s;
+}
+.field::placeholder { color: var(--muted); }
+.field:focus { border-color: color-mix(in oklab, var(--accent) 55%, var(--surface2)); }
+.chat__form { margin-top: 8px; }
+
+/* ---- buttons ---- */
+.btn-ghost {
+  background: transparent; border: 1px solid var(--surface2); color: var(--text);
+  border-radius: 999px; padding: 6px 13px; font: inherit; font-size: 13px; cursor: pointer;
+  transition: border-color .15s, opacity .15s;
+}
+.btn-ghost:hover:not(:disabled) { border-color: var(--accent); }
+.btn-ghost:disabled { opacity: .4; cursor: default; }
+.btn-primary {
+  background: var(--accent); color: color-mix(in oklab, var(--bg) 80%, black);
+  border: 0; border-radius: 13px; padding: 12px 18px; font: inherit; font-weight: 600; cursor: pointer;
+}
+
+/* ---- tile modal ---- */
+.modal__head { display: flex; align-items: baseline; justify-content: space-between; margin: 4px 0 2px; }
+.modal__title { font-family: "Fraunces", Georgia, serif; font-weight: 540; font-size: 19px; }
+.modal__hint { font-size: 12px; color: var(--muted); margin: 2px 0 10px; }
+.modal__actions { display: flex; justify-content: flex-end; margin-top: 10px; }
+
+/* ---- chat sidebar drawer ---- */
+.drawer {
+  position: fixed; top: 0; bottom: 0; left: 0; z-index: 31;
+  width: min(82vw, 320px);
+  background: color-mix(in oklab, var(--surface) 97%, var(--bg)); color: var(--text);
+  border-right: 1px solid var(--surface2);
+  box-shadow: 24px 0 60px -30px rgba(0,0,0,0.85);
+  padding: 16px 12px; display: flex; flex-direction: column; gap: 4px;
+  animation: slidein .27s cubic-bezier(.2,.85,.25,1) both;
+}
+.drawer__top { display: flex; align-items: center; justify-content: space-between; padding: 2px 6px 6px; }
+.drawer__title { font-family: "Fraunces", Georgia, serif; font-style: italic; font-size: 17px; }
+.chat-row {
+  width: 100%; text-align: left; background: transparent; border: 0; color: var(--text);
+  font: inherit; font-size: 14px; padding: 11px 10px; border-radius: 10px; cursor: pointer;
+  transition: background .12s;
+}
+.chat-row:hover { background: color-mix(in oklab, var(--surface2) 50%, transparent); }
+.drawer__empty { color: var(--muted); font-size: 13px; padding: 10px; }
+
+/* ---- color swatch picker (in header) ---- */
+.swatch {
+  position: relative; width: 28px; height: 28px; border-radius: 999px; padding: 0; cursor: pointer;
+  border: 2px solid var(--surface2); overflow: hidden; background: var(--accent);
+}
+.swatch input {
+  position: absolute; inset: -25%; width: 150%; height: 150%; border: 0; padding: 0; background: transparent; cursor: pointer;
+}
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

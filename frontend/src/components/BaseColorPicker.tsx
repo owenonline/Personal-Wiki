@@ -13,9 +13,8 @@ export function BaseColorPicker() {
   }
 
   return (
-    <label>
-      Base color
+    <span className="swatch" style={{ background: base }}>
       <input type="color" aria-label="Base color" value={base} onChange={onChange} />
-    </label>
+    </span>
   );
 }
