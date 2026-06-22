@@ -820,3 +820,13 @@ Deliberately **not** here (later plans): the real tile dashboard, tile→modal l
 **Type/signature consistency:** `ThemeTokens` keys (`bg/surface/surface2/text/muted/accent/secondary`) are identical across `derive.ts`, `theme.ts`, and the tests. `deriveTheme` / `applyTheme` / `applyBase` / `loadBase` / `saveBase` / `DEFAULT_BASE` signatures match across Tasks 2/3/5. The API client function names + the `Home`/`ChatResult`/`WikiPage`/`ViewContext` types match the Plan 2a endpoints (`/api/home`, `/api/chat`, `/api/wiki/page`, `/capture`, `/api/chats`, `/api/events`). `Settings.spa_dir` (added Plan 2a Task 9) is what Task 6 populates.
 
 **Notes for the implementer:** Tasks 2, 3, 4 are independent frontend modules (parallelizable); Task 5 depends on 3 + 4; Task 1 must come first (scaffold); Task 6 is backend-only and independent of the frontend tasks. Frontend tests run with `npm test` from `frontend/`; the controller runs `npm`/`uv` and commits (subagents draft).
+
+---
+
+## Post-implementation amendments (applied during execution)
+
+- **`frontend/src/culori.d.ts`** (new) — minimal ambient declarations for culori's `converter`/`formatHex`. culori ships no type declarations that `tsc` resolves under `"bundler"` moduleResolution, so `npm run build` (`tsc -b`) failed; Vitest passed regardless because esbuild doesn't type-check. The ambient module unblocks the build with real types for the two helpers used.
+- **`BaseColorPicker.test.tsx`** uses `fireEvent.change(input, {target:{value}})` rather than a raw `dispatchEvent` — React's controlled-input value tracker ignores a directly-set `.value`, so `onChange` wouldn't fire and the assertion failed. (Plan code above shows the raw-dispatch version that was the actual defect.)
+- **`frontend/*.tsbuildinfo`** added to `.gitignore` (emitted by `tsc -b`).
+
+Final state: **15 frontend tests pass** and `vite build` produces `frontend/dist/`; the Python suite stays **67 passed, 1 skipped**.
