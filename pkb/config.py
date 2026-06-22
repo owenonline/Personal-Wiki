@@ -41,4 +41,6 @@ class Settings:
 def get_settings(vault_dir: Path | None = None) -> Settings:
     if vault_dir is None:
         vault_dir = Path(os.environ.get("PKB_VAULT_DIR", "./vault"))
-    return Settings(vault_dir=Path(vault_dir).resolve())
+    spa_env = os.environ.get("PKB_SPA_DIR")
+    spa_dir = Path(spa_env).resolve() if spa_env else None
+    return Settings(vault_dir=Path(vault_dir).resolve(), spa_dir=spa_dir)
