@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel
 
 from pkb import agent
@@ -37,7 +38,8 @@ async def sse_stream(bus: EventBus):
         bus.unsubscribe(q)
 
 
-def create_app(ctx: AgentContext, client: Any, bus: EventBus | None = None) -> FastAPI:
+def create_app(ctx: AgentContext, client: Any, bus: EventBus | None = None,
+               spa_dir: Path | None = None) -> FastAPI:
     app = FastAPI(title="PKB")
     bus = bus or EventBus()
 
@@ -105,5 +107,15 @@ def create_app(ctx: AgentContext, client: Any, bus: EventBus | None = None) -> F
     @app.get("/api/events")
     async def events() -> StreamingResponse:
         return StreamingResponse(sse_stream(bus), media_type="text/event-stream")
+
+    if spa_dir is not None:
+        index = spa_dir / "index.html"
+
+        @app.get("/{full_path:path}")
+        def spa(full_path: str):
+            candidate = spa_dir / full_path
+            if full_path and candidate.is_file():
+                return FileResponse(candidate)
+            return FileResponse(index)
 
     return app

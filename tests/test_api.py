@@ -156,3 +156,25 @@ def test_events_route_registered(vault, monkeypatch):
     client, ctx = _client(vault, monkeypatch)
     app = create_app(ctx, client=object(), bus=EventBus())
     assert "/api/events" in {r.path for r in app.routes}
+
+
+def test_spa_served_when_present(vault, monkeypatch, tmp_path):
+    from fastapi.testclient import TestClient
+
+    from pkb.api import create_app
+
+    client, ctx = _client(vault, monkeypatch)
+    spa = tmp_path / "dist"
+    spa.mkdir()
+    (spa / "index.html").write_text("<!doctype html><title>PKB</title>")
+    app = create_app(ctx, client=object(), spa_dir=spa)
+    c2 = TestClient(app)
+    assert c2.get("/api/home").status_code == 200          # API still works
+    assert "PKB" in c2.get("/").text                       # SPA root
+    assert "PKB" in c2.get("/some/client/route").text      # deep link -> index
+
+
+def test_no_spa_dir_leaves_api_only(vault, monkeypatch):
+    client, ctx = _client(vault, monkeypatch)  # built without spa_dir
+    assert client.get("/api/home").status_code == 200
+    assert client.get("/").status_code == 404

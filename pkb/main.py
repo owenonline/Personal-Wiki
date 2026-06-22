@@ -21,7 +21,7 @@ def build_app():
     conn = connect(settings.db_path)
     init_db(conn)
     ctx = make_context(conn, settings)
-    return create_app(ctx, client=build_client(), bus=EventBus())
+    return create_app(ctx, client=build_client(), bus=EventBus(), spa_dir=settings.spa_dir)
 
 
 def main() -> None:

@@ -11,6 +11,7 @@ DEFAULT_MODEL = "claude-opus-4-8"
 class Settings:
     vault_dir: Path
     model: str = DEFAULT_MODEL
+    spa_dir: Path | None = None  # built SPA dist/ to serve (set by main once built)
 
     @property
     def db_path(self) -> Path:
