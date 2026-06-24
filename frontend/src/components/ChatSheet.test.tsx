@@ -26,6 +26,15 @@ describe("ChatSheet", () => {
     expect(screen.getByText(/update_event/)).toBeInTheDocument();
   });
 
+  it("renders the assistant reply as markdown", async () => {
+    postChat.mockResolvedValue({ chat_id: "c", reply: "**bold**\n\n- one\n- two", actions: [] });
+    render(<ChatSheet onClose={() => {}} />);
+    await userEvent.type(screen.getByRole("textbox"), "x{enter}");
+    await screen.findByRole("list");
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+    expect(screen.queryByText("- one")).toBeNull(); // rendered, not raw markdown
+  });
+
   it("keeps (persists) the chat once it has an id", async () => {
     postChat.mockResolvedValue({ chat_id: "chat_1", reply: "ok", actions: [] });
     render(<ChatSheet onClose={() => {}} />);

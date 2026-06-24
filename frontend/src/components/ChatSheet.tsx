@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { persistChat, ViewContext } from "../api/client";
 import { useChat } from "../hooks/useChat";
+import { Markdown } from "./Markdown";
 import { ToolSteps } from "./ToolSteps";
 
 export function ChatSheet({
@@ -80,8 +81,8 @@ export function ChatSheet({
                   {m.content}
                 </div>
               ) : (
-                <div key={i} className="row-ai">
-                  <div className="bubble bubble--ai">{m.content}</div>
+                <div key={i} className="msg-ai">
+                  <Markdown>{m.content}</Markdown>
                   <ToolSteps steps={m.tool_steps} />
                 </div>
               ),
