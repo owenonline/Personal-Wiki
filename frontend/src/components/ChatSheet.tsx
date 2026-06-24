@@ -9,14 +9,17 @@ export function ChatSheet({
   onClose,
   context = null,
   existingChatId,
+  onOpenSidebar,
 }: {
   onClose: () => void;
   context?: ViewContext;
   existingChatId?: string;
+  onOpenSidebar?: () => void;
 }) {
   const { chatId, messages, send } = useChat(existingChatId ?? null);
   const [text, setText] = useState("");
-  const [expanded, setExpanded] = useState(false);
+  // A chat opened from the sidebar starts full screen.
+  const [expanded, setExpanded] = useState(Boolean(existingChatId));
   const [wantKeep, setWantKeep] = useState(false);
   // A chat opened from the sidebar is already persistent.
   const [kept, setKept] = useState(Boolean(existingChatId));
@@ -69,9 +72,21 @@ export function ChatSheet({
         </div>
         <div className="chat">
           <div className="chat__head">
-            <button className="btn-ghost" type="button" disabled={kept} onClick={keep}>
-              {kept ? "Kept ✓" : "Keep"}
-            </button>
+            <div className="chat__head-left">
+              {onOpenSidebar && (
+                <button
+                  className="icon-btn"
+                  type="button"
+                  aria-label="Open chats"
+                  onClick={onOpenSidebar}
+                >
+                  ☰
+                </button>
+              )}
+              <button className="btn-ghost" type="button" disabled={kept} onClick={keep}>
+                {kept ? "Kept ✓" : "Keep"}
+              </button>
+            </div>
             <span className="chat__ephemeral">{kept ? "kept" : "ephemeral · swipe up to keep"}</span>
             <button className="icon-btn" type="button" aria-label="Close chat" onClick={onClose}>
               ×

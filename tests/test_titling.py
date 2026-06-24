@@ -20,14 +20,23 @@ class _Messages:
         return _Resp(self._outer.text)
 
 
+class _Beta:
+    def __init__(self, outer):
+        self._outer = outer
+
+    @property
+    def messages(self):
+        return _Messages(self._outer)
+
+
 class _FakeClient:
     def __init__(self, text: str):
         self.text = text
         self.calls: list[dict] = []
 
     @property
-    def messages(self):
-        return _Messages(self)
+    def beta(self):
+        return _Beta(self)
 
 
 def test_returns_clean_stripped_title():
@@ -53,7 +62,7 @@ def test_no_llm_call_when_no_messages():
 def test_errors_are_swallowed():
     class Boom:
         @property
-        def messages(self):
+        def beta(self):
             raise RuntimeError("model unavailable")
 
     assert generate_chat_title(Boom(), "m", [{"role": "user", "content": "hi"}]) is None

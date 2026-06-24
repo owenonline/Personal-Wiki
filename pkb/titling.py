@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import logging
 from typing import Any
+
+log = logging.getLogger(__name__)
 
 # Only the first few turns are needed to name a chat; keep the prompt cheap.
 MAX_MESSAGES = 6
@@ -35,7 +38,9 @@ def generate_chat_title(client: Any, model: str, messages: list[dict]) -> str | 
     if not convo:
         return None
     try:
-        resp = client.messages.create(
+        # Use the beta namespace to match the rest of the agent — the Claude
+        # Platform on AWS client exposes messages only under `client.beta`.
+        resp = client.beta.messages.create(
             model=model,
             max_tokens=24,
             messages=[
@@ -52,4 +57,5 @@ def generate_chat_title(client: Any, model: str, messages: list[dict]) -> str | 
         title = _block_text(resp.content).strip().strip('"').strip()
         return title[:80] or None
     except Exception:
+        log.warning("chat title generation failed", exc_info=True)
         return None

@@ -64,6 +64,7 @@ export default function App() {
           key={openChatId ?? "new"}
           existingChatId={openChatId ?? undefined}
           onClose={closeChat}
+          onOpenSidebar={() => setSidebarOpen(true)}
         />
       )}
       {sidebarOpen && (

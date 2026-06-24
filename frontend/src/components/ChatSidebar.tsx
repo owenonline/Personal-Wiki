@@ -19,7 +19,7 @@ export function ChatSidebar({
 
   return (
     <>
-      <div className="scrim" onClick={onClose} />
+      <div className="scrim scrim--top" onClick={onClose} />
       <aside className="drawer" aria-label="chats">
         <div className="drawer__top">
           <span className="drawer__title">Chats</span>

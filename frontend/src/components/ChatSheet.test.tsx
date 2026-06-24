@@ -59,5 +59,13 @@ describe("ChatSheet", () => {
     expect(await screen.findByText("earlier question")).toBeInTheDocument();
     expect(screen.getByText("earlier answer")).toBeInTheDocument();
     expect(screen.getByText("Kept ✓")).toBeInTheDocument();
+    expect(screen.getByRole("dialog", { name: "chat" })).toHaveClass("sheet--full");
+  });
+
+  it("opens the sidebar from the in-chat hamburger", async () => {
+    const onOpenSidebar = vi.fn();
+    render(<ChatSheet onClose={() => {}} onOpenSidebar={onOpenSidebar} />);
+    await userEvent.click(screen.getByRole("button", { name: /open chats/i }));
+    expect(onOpenSidebar).toHaveBeenCalled();
   });
 });

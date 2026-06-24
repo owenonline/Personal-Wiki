@@ -148,6 +148,8 @@ body::after {
   background: color-mix(in oklab, var(--bg) 50%, rgba(0,0,0,0.6));
   backdrop-filter: blur(3px); animation: fade .2s both;
 }
+/* Drawer scrim sits above the (possibly full-screen) chat sheet. */
+.scrim--top { z-index: 40; }
 .sheet {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 31;
   max-width: var(--maxw); margin: 0 auto;
@@ -167,6 +169,7 @@ body::after {
 /* ---- chat ---- */
 .chat { display: flex; flex-direction: column; height: 100%; }
 .chat__head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.chat__head-left { display: flex; align-items: center; gap: 8px; }
 .chat__ephemeral { font-size: 11px; color: var(--muted); font-style: italic; }
 .chat__msgs { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; padding: 8px 2px; }
 .bubble { max-width: 84%; padding: 10px 13px; border-radius: 15px; font-size: 14px; line-height: 1.38; }
@@ -230,7 +233,7 @@ body::after {
 
 /* ---- chat sidebar drawer ---- */
 .drawer {
-  position: fixed; top: 0; bottom: 0; left: 0; z-index: 31;
+  position: fixed; top: 0; bottom: 0; left: 0; z-index: 41;
   width: min(82vw, 320px);
   background: color-mix(in oklab, var(--surface) 97%, var(--bg)); color: var(--text);
   border-right: 1px solid var(--surface2);
