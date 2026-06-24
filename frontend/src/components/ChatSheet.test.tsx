@@ -62,10 +62,17 @@ describe("ChatSheet", () => {
     expect(screen.getByRole("dialog", { name: "chat" })).toHaveClass("sheet--full");
   });
 
-  it("opens the sidebar from the in-chat hamburger", async () => {
+  it("shows the sidebar hamburger only in full-screen view", async () => {
     const onOpenSidebar = vi.fn();
-    render(<ChatSheet onClose={() => {}} onOpenSidebar={onOpenSidebar} />);
-    await userEvent.click(screen.getByRole("button", { name: /open chats/i }));
+    // Partial (fresh) chat: no hamburger.
+    const { unmount } = render(<ChatSheet onClose={() => {}} onOpenSidebar={onOpenSidebar} />);
+    expect(screen.queryByRole("button", { name: /open chats/i })).toBeNull();
+    unmount();
+
+    // Full-screen (opened from sidebar): hamburger present and wired.
+    getChat.mockResolvedValue({ id: "c6", messages: [] });
+    render(<ChatSheet onClose={() => {}} existingChatId="c6" onOpenSidebar={onOpenSidebar} />);
+    await userEvent.click(await screen.findByRole("button", { name: /open chats/i }));
     expect(onOpenSidebar).toHaveBeenCalled();
   });
 });

@@ -73,7 +73,7 @@ export function ChatSheet({
         <div className="chat">
           <div className="chat__head">
             <div className="chat__head-left">
-              {onOpenSidebar && (
+              {onOpenSidebar && expanded && (
                 <button
                   className="icon-btn"
                   type="button"
