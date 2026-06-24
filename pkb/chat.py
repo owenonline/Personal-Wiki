@@ -34,6 +34,11 @@ def mark_persistent(conn: sqlite3.Connection, chat_id: str) -> None:
     conn.commit()
 
 
+def set_title(conn: sqlite3.Connection, chat_id: str, title: str) -> None:
+    conn.execute("UPDATE chats SET title=? WHERE id=?", (title, chat_id))
+    conn.commit()
+
+
 def list_chats(conn: sqlite3.Connection, include_ephemeral: bool = False) -> list[dict]:
     sql = "SELECT * FROM chats"
     if not include_ephemeral:

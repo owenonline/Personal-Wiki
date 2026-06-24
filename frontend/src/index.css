@@ -159,7 +159,7 @@ body::after {
   height: 72vh;
   transition: height .28s cubic-bezier(.2,.85,.25,1);
 }
-.sheet--full { height: 94vh; }
+.sheet--full { height: 100vh; height: 100dvh; border-radius: 0; }
 .sheet__grab { padding: 8px 0 4px; touch-action: none; cursor: grab; }
 .sheet__grab:active { cursor: grabbing; }
 .sheet__handle { width: 40px; height: 4px; border-radius: 999px; background: var(--surface2); margin: 0 auto; }

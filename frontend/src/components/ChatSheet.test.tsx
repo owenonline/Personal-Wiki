@@ -4,9 +4,11 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const postChat = vi.fn();
 const persistChat = vi.fn();
+const getChat = vi.fn();
 vi.mock("../api/client", () => ({
   postChat: (...a: unknown[]) => postChat(...a),
   persistChat: (...a: unknown[]) => persistChat(...a),
+  getChat: (...a: unknown[]) => getChat(...a),
 }));
 
 import { ChatSheet } from "./ChatSheet";
@@ -43,5 +45,19 @@ describe("ChatSheet", () => {
     await userEvent.click(screen.getByRole("button", { name: /keep/i }));
     await waitFor(() => expect(persistChat).toHaveBeenCalledWith("chat_1"));
     expect(await screen.findByText("Kept ✓")).toBeInTheDocument();
+  });
+
+  it("restores an existing chat's messages and shows it as kept", async () => {
+    getChat.mockResolvedValue({
+      id: "c5",
+      messages: [
+        { role: "user", content: "earlier question", tool_steps: [] },
+        { role: "assistant", content: "earlier answer", tool_steps: [] },
+      ],
+    });
+    render(<ChatSheet onClose={() => {}} existingChatId="c5" />);
+    expect(await screen.findByText("earlier question")).toBeInTheDocument();
+    expect(screen.getByText("earlier answer")).toBeInTheDocument();
+    expect(screen.getByText("Kept ✓")).toBeInTheDocument();
   });
 });

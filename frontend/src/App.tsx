@@ -11,8 +11,18 @@ import { useHome } from "./hooks/useHome";
 export default function App() {
   const { home, refresh } = useHome();
   const [chatOpen, setChatOpen] = useState(false);
+  const [openChatId, setOpenChatId] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [modalTile, setModalTile] = useState<TileData | null>(null);
+
+  function openChat(id: string | null) {
+    setOpenChatId(id);
+    setChatOpen(true);
+  }
+  function closeChat() {
+    setChatOpen(false);
+    setOpenChatId(null);
+  }
 
   return (
     <main className="app">
@@ -33,7 +43,7 @@ export default function App() {
 
       <div className="capture-bar">
         <div className="capture-bar__inner">
-          <button className="capture-btn" type="button" onClick={() => setChatOpen(true)}>
+          <button className="capture-btn" type="button" onClick={() => openChat(null)}>
             Type anything…<span className="caret">⌁</span>
           </button>
         </div>
@@ -49,9 +59,21 @@ export default function App() {
           onClose={() => setModalTile(null)}
         />
       )}
-      {chatOpen && <ChatSheet onClose={() => setChatOpen(false)} />}
+      {chatOpen && (
+        <ChatSheet
+          key={openChatId ?? "new"}
+          existingChatId={openChatId ?? undefined}
+          onClose={closeChat}
+        />
+      )}
       {sidebarOpen && (
-        <ChatSidebar onOpen={() => setSidebarOpen(false)} onClose={() => setSidebarOpen(false)} />
+        <ChatSidebar
+          onOpen={(id) => {
+            setSidebarOpen(false);
+            openChat(id);
+          }}
+          onClose={() => setSidebarOpen(false)}
+        />
       )}
     </main>
   );

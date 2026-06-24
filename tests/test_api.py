@@ -109,6 +109,20 @@ def test_persist_then_listed(vault, monkeypatch):
     assert len(listed) == 1 and listed[0]["id"] == cid
 
 
+def test_persist_names_the_chat(vault, monkeypatch):
+    import pkb.titling as titling
+
+    monkeypatch.setattr(
+        titling, "generate_chat_title", lambda client, model, messages: "Bench day"
+    )
+    client, ctx = _client(vault, monkeypatch)
+    cid = client.post("/api/chat", json={"text": "log bench 135x5"}).json()["chat_id"]
+    body = client.post(f"/api/chats/{cid}/persist").json()
+    assert body["title"] == "Bench day"
+    listed = client.get("/api/chats").json()
+    assert listed[0]["title"] == "Bench day"
+
+
 def test_capture_publishes_home_changed(vault, monkeypatch):
     import asyncio
 

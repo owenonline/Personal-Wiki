@@ -10,6 +10,7 @@ from pydantic import BaseModel
 
 from pkb import agent
 from pkb import chat as chatstore
+from pkb import titling
 from pkb.eventbus import EventBus
 from pkb.home import build_home
 from pkb.store import query_select
@@ -102,7 +103,17 @@ def create_app(ctx: AgentContext, client: Any, bus: EventBus | None = None,
     @app.post("/api/chats/{chat_id}/persist")
     def persist_chat(chat_id: str) -> dict:
         chatstore.mark_persistent(ctx.conn, chat_id)
-        return {"chat_id": chat_id, "ephemeral": False}
+        # Give the now-permanent chat a human-readable name via a cheap model.
+        # Best-effort: if it fails, the chat stays untitled rather than erroring.
+        c = chatstore.get_chat(ctx.conn, chat_id)
+        title = None
+        if c and c.get("messages"):
+            title = titling.generate_chat_title(
+                client, ctx.settings.title_model, c["messages"]
+            )
+            if title:
+                chatstore.set_title(ctx.conn, chat_id, title)
+        return {"chat_id": chat_id, "ephemeral": False, "title": title}
 
     @app.get("/api/events")
     async def events() -> StreamingResponse:

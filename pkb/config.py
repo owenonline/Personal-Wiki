@@ -5,12 +5,15 @@ from dataclasses import dataclass
 from pathlib import Path
 
 DEFAULT_MODEL = "claude-opus-4-8"
+# Lightweight model used for cheap auxiliary calls (e.g. naming a chat).
+DEFAULT_TITLE_MODEL = "claude-haiku-4-5"
 
 
 @dataclass(frozen=True)
 class Settings:
     vault_dir: Path
     model: str = DEFAULT_MODEL
+    title_model: str = DEFAULT_TITLE_MODEL
     spa_dir: Path | None = None  # built SPA dist/ to serve (set by main once built)
 
     @property

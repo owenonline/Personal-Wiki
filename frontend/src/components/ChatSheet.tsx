@@ -8,15 +8,18 @@ import { ToolSteps } from "./ToolSteps";
 export function ChatSheet({
   onClose,
   context = null,
+  existingChatId,
 }: {
   onClose: () => void;
   context?: ViewContext;
+  existingChatId?: string;
 }) {
-  const { chatId, messages, send } = useChat();
+  const { chatId, messages, send } = useChat(existingChatId ?? null);
   const [text, setText] = useState("");
   const [expanded, setExpanded] = useState(false);
   const [wantKeep, setWantKeep] = useState(false);
-  const [kept, setKept] = useState(false);
+  // A chat opened from the sidebar is already persistent.
+  const [kept, setKept] = useState(Boolean(existingChatId));
   const dragStartY = useRef<number | null>(null);
 
   // Persist as soon as a chat id exists and the user has asked to keep it
