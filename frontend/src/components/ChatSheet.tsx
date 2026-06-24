@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { persistChat, ViewContext } from "../api/client";
 import { useChat } from "../hooks/useChat";
@@ -13,6 +13,40 @@ export function ChatSheet({
 }) {
   const { chatId, messages, send } = useChat();
   const [text, setText] = useState("");
+  const [expanded, setExpanded] = useState(false);
+  const [wantKeep, setWantKeep] = useState(false);
+  const [kept, setKept] = useState(false);
+  const dragStartY = useRef<number | null>(null);
+
+  // Persist as soon as a chat id exists and the user has asked to keep it
+  // (via swipe-up or the Keep button) — even if they asked before sending.
+  useEffect(() => {
+    if (wantKeep && chatId && !kept) {
+      Promise.resolve(persistChat(chatId))
+        .then(() => setKept(true))
+        .catch(() => {});
+    }
+  }, [wantKeep, chatId, kept]);
+
+  function keep() {
+    setWantKeep(true);
+  }
+  function expand() {
+    setExpanded(true);
+    setWantKeep(true); // expanding = keeping
+  }
+
+  function onGrabDown(e: React.PointerEvent) {
+    dragStartY.current = e.clientY;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+  }
+  function onGrabUp(e: React.PointerEvent) {
+    if (dragStartY.current == null) return;
+    const dy = dragStartY.current - e.clientY; // upward swipe = positive
+    dragStartY.current = null;
+    if (dy > 48) expand();
+    else if (dy < -48) (expanded ? setExpanded(false) : onClose());
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -25,19 +59,16 @@ export function ChatSheet({
   return (
     <>
       <div className="scrim" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label="chat">
-        <div className="sheet__handle" />
+      <div className={"sheet" + (expanded ? " sheet--full" : "")} role="dialog" aria-label="chat">
+        <div className="sheet__grab" onPointerDown={onGrabDown} onPointerUp={onGrabUp}>
+          <div className="sheet__handle" />
+        </div>
         <div className="chat">
           <div className="chat__head">
-            <button
-              className="btn-ghost"
-              type="button"
-              disabled={!chatId}
-              onClick={() => chatId && persistChat(chatId)}
-            >
-              Keep
+            <button className="btn-ghost" type="button" disabled={kept} onClick={keep}>
+              {kept ? "Kept ✓" : "Keep"}
             </button>
-            <span className="chat__ephemeral">ephemeral</span>
+            <span className="chat__ephemeral">{kept ? "kept" : "ephemeral · swipe up to keep"}</span>
             <button className="icon-btn" type="button" aria-label="Close chat" onClick={onClose}>
               ×
             </button>
